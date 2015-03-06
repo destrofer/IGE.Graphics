@@ -1,0 +1,140 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <ProjectGuid>{398C59DB-AD8B-4176-B7B1-90745103723F}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <OutputType>Library</OutputType>
+    <RootNamespace>IGE.Graphics</RootNamespace>
+    <AssemblyName>IGE.Graphics</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <NoStdLib>False</NoStdLib>
+    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
+    <BaseIntermediateOutputPath>.\obj\$(Configuration)\</BaseIntermediateOutputPath>
+    <IntermediateOutputPath>.\obj\$(Configuration)\</IntermediateOutputPath>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Platform)' == 'AnyCPU' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <BaseAddress>4194304</BaseAddress>
+    <RegisterForComInterop>False</RegisterForComInterop>
+    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
+    <FileAlignment>4096</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <OutputPath>.\bin\$(Configuration)\</OutputPath>
+    <DebugSymbols>True</DebugSymbols>
+    <DebugType>Full</DebugType>
+    <Optimize>False</Optimize>
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <OutputPath>.\bin\$(Configuration)\</OutputPath>
+    <DebugSymbols>False</DebugSymbols>
+    <DebugType>None</DebugType>
+    <Optimize>True</Optimize>
+    <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
+    <DefineConstants>TRACE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ComplexImage.cs" />
+    <Compile Include="ComplexImageComponent.cs" />
+    <Compile Include="FragmentShader.cs" />
+    <Compile Include="GraphicsUtils.cs" />
+    <Compile Include="GUI\Backgrounds\GradientBackground.cs" />
+    <Compile Include="GUI\Backgrounds\SolidBackground.cs" />
+    <Compile Include="GUI\Borders\ThinBorder.cs" />
+    <Compile Include="GUI\CharInfo.cs" />
+    <Compile Include="GUI\Component.cs" />
+    <Compile Include="GUI\Components\Button.cs" />
+    <Compile Include="GUI\Components\HScrollBar.cs" />
+    <Compile Include="GUI\Components\Label.cs" />
+    <Compile Include="GUI\Components\Menu.cs" />
+    <Compile Include="GUI\Components\PopupMenu.cs" />
+    <Compile Include="GUI\Components\ScrollBar.cs" />
+    <Compile Include="GUI\Components\ScrollBox.cs" />
+    <Compile Include="GUI\Components\VScrollBar.cs" />
+    <Compile Include="GUI\Components\Window.cs" />
+    <Compile Include="GUI\Enums.cs" />
+    <Compile Include="GUI\Events.cs" />
+    <Compile Include="GUI\Font.cs" />
+    <Compile Include="GUI\Interfaces\IUIBackground.cs" />
+    <Compile Include="GUI\Interfaces\IUIBorder.cs" />
+    <Compile Include="GUI\Interfaces\IUIText.cs" />
+    <Compile Include="GUI\MenuItem.cs" />
+    <Compile Include="GUI\Structures.cs" />
+    <Compile Include="GUI\TextBox.cs" />
+    <Compile Include="GUI\TextInfo.cs" />
+    <Compile Include="GUI\UI.cs" />
+    <Compile Include="GUI\UIDefaults.cs" />
+    <Compile Include="IAnimatedRenderable.cs" />
+    <Compile Include="IGraphicsDriver.cs" />
+    <Compile Include="Image.cs" />
+    <Compile Include="IOpenGLWindow.cs" />
+    <Compile Include="IO\FileFormats\BitmapFile.cs" />
+    <Compile Include="IO\FileFormats\MazanovModelAnimationFile.cs" />
+    <Compile Include="IO\FileFormats\MazanovModelFile.cs" />
+    <Compile Include="IO\FileFormats\ModelAnimationFile.cs" />
+    <Compile Include="IO\FileFormats\ModelFile.cs" />
+    <Compile Include="IResourceContext.cs" />
+    <Compile Include="Material.cs" />
+    <Compile Include="Models\Parametric\Planet.cs" />
+    <Compile Include="OpenGL\ARB\GL.Delegates.cs" />
+    <Compile Include="OpenGL\ARB\GL.PublicInterface.cs" />
+    <Compile Include="OpenGL\EXT\GL.Delegates.cs" />
+    <Compile Include="OpenGL\EXT\GL.PublicInterface.cs" />
+    <Compile Include="OpenGL\GL.cs" />
+    <Compile Include="OpenGL\GL.Enums.cs" />
+    <Compile Include="OpenGL\GL\GL.Delegates.cs" />
+    <Compile Include="OpenGL\GL\GL.PublicInterface.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Shader.cs" />
+    <Compile Include="ShaderAutoUniformInfo.cs" />
+    <Compile Include="ShaderObject.cs" />
+    <Compile Include="SimpleImage.cs" />
+    <Compile Include="Sprites\Sprite.cs" />
+    <Compile Include="Sprites\SpriteFrame.cs" />
+    <Compile Include="Sprites\SpriteFrameset.cs" />
+    <Compile Include="Sprites\SpriteLibrary.cs" />
+    <Compile Include="Texture.cs" />
+    <Compile Include="VertexBuffer.cs" />
+    <Compile Include="VertexShader.cs" />
+    <Compile Include="View.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\IGE.Common\IGE.Common.csproj">
+      <Project>{9FF16105-BE2B-44A2-91C0-D79F38AD8BA6}</Project>
+      <Name>IGE.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\IGE.Input\IGE.Input.csproj">
+      <Project>{AE427F75-5639-42CB-B614-6127370BD774}</Project>
+      <Name>IGE.Input</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="GUI" />
+    <Folder Include="IO" />
+    <Folder Include="IO\FileFormats" />
+    <Folder Include="Models" />
+    <Folder Include="Models\Parametric" />
+    <Folder Include="OpenGL\EXT" />
+    <Folder Include="OpenGL" />
+    <Folder Include="Sprites" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
