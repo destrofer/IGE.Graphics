@@ -87,6 +87,11 @@
     <Compile Include="Image.cs" />
     <Compile Include="IOpenGLWindow.cs" />
     <Compile Include="IO\FileFormats\BitmapFile.cs" />
+    <Compile Include="IO\FileFormats\Blender\BlenderFile.cs" />
+    <Compile Include="IO\FileFormats\Blender\BlenderFileBlockHeader.cs" />
+    <Compile Include="IO\FileFormats\Blender\BlenderFileHeader.cs" />
+    <Compile Include="IO\FileFormats\Blender\BlenderSDNAFileBlock.cs" />
+    <Compile Include="IO\FileFormats\Blender\Enums.cs" />
     <Compile Include="IO\FileFormats\MazanovModelAnimationFile.cs" />
     <Compile Include="IO\FileFormats\MazanovModelFile.cs" />
     <Compile Include="IO\FileFormats\ModelAnimationFile.cs" />
@@ -130,6 +135,7 @@
     <Folder Include="GUI" />
     <Folder Include="IO" />
     <Folder Include="IO\FileFormats" />
+    <Folder Include="IO\FileFormats\Blender" />
     <Folder Include="Models" />
     <Folder Include="Models\Parametric" />
     <Folder Include="OpenGL\EXT" />
