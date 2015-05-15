@@ -20,16 +20,9 @@
 using System;
 
 namespace IGE.IO.FileFormats.Blender {
-	public enum BlenderPointerSize : byte {
-		Ptr32,
-		Ptr64
+	public struct BlenderFileStructure {
+		public string Name;
+		public int Size;
+		public BlenderFileField[] Fields;
 	}
-	
-	public enum BlenderFieldObjectFieldType : byte {
-		None,
-		Value,
-		Object,
-		Pointer,
-		Method
-	}	
 }

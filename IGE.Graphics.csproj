@@ -89,7 +89,11 @@
     <Compile Include="IO\FileFormats\BitmapFile.cs" />
     <Compile Include="IO\FileFormats\Blender\BlenderFile.cs" />
     <Compile Include="IO\FileFormats\Blender\BlenderFileBlockHeader.cs" />
+    <Compile Include="IO\FileFormats\Blender\BlenderFileField.cs" />
     <Compile Include="IO\FileFormats\Blender\BlenderFileHeader.cs" />
+    <Compile Include="IO\FileFormats\Blender\BlenderFileObject.cs" />
+    <Compile Include="IO\FileFormats\Blender\BlenderFileObjectField.cs" />
+    <Compile Include="IO\FileFormats\Blender\BlenderFileStructure.cs" />
     <Compile Include="IO\FileFormats\Blender\BlenderSDNAFileBlock.cs" />
     <Compile Include="IO\FileFormats\Blender\Enums.cs" />
     <Compile Include="IO\FileFormats\MazanovModelAnimationFile.cs" />

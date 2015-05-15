@@ -125,16 +125,4 @@ namespace IGE.IO.FileFormats.Blender {
 			}
 		}
 	}
-
-	public struct BlenderFileStructure {
-		public string Name;
-		public int Size;
-		public BlenderFileField[] Fields;
-	}
-	
-	public struct BlenderFileField {
-		public string Name;
-		public string Type;
-		public int Size;
-	}
 }

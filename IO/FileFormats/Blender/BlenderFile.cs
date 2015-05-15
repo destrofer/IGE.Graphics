@@ -22,8 +22,8 @@
 
 using System;
 using System.IO;
-using System.Text;
 using System.Collections.Generic;
+using System.Dynamic;
 
 namespace IGE.IO.FileFormats.Blender {
 	public class BlenderFile {
