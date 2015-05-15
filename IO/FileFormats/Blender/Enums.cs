@@ -24,12 +24,4 @@ namespace IGE.IO.FileFormats.Blender {
 		Ptr32,
 		Ptr64
 	}
-	
-	public enum BlenderFieldObjectFieldType : byte {
-		None,
-		Value,
-		Object,
-		Pointer,
-		Method
-	}	
 }

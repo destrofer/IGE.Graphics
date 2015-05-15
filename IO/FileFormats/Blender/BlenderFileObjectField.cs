@@ -21,10 +21,10 @@ using System;
 
 namespace IGE.IO.FileFormats.Blender {
 	public struct BlenderFileObjectField {
-		public BlenderFieldObjectFieldType BaseType;
 		public ulong Address;
 		public int Size;
 		public string TypeName;
-		public object Value;
+		public dynamic Value;
+		public dynamic Pointer;
 	}
 }

@@ -19,6 +19,7 @@
 
 using System;
 using System.IO;
+using System.Text;
 using System.Collections.Generic;
 using System.Dynamic;
 
@@ -35,13 +36,15 @@ namespace IGE.IO.FileFormats.Blender {
 		}
 		
 		public BlenderFileObject(BinaryReader r, ulong address, BlenderPointerSize ptrSize, Endian endianness, BlenderSDNAFileBlock sdna, string typeName) {
-			ulong fieldAddress = address;
+			ulong fieldAddress = address, valAddress;
 			BlenderFileStructure structInfo = sdna.StructureIndex[typeName];
 			string fieldName;
-			int dimStartIndex, i;
+			LoadType loadType;
+			int dimStartIndex, stringLength, readSize, i;
 			string[] dimensionSizesText;
 			int[] dimensionSizes;
-			object val;
+			dynamic val, ptr;
+			Type arrayElementType, arrayType;
 			
 			m_Address = address;
 			m_Size = structInfo.Size;
@@ -49,6 +52,8 @@ namespace IGE.IO.FileFormats.Blender {
 			foreach( BlenderFileField fieldInfo in structInfo.Fields ) {
 				fieldName = fieldInfo.Name;
 				dimensionSizes = null;
+				stringLength = 0;
+
 				if( fieldName.EndsWith("]", StringComparison.InvariantCulture) ) {
 					dimStartIndex = fieldName.IndexOf('[');
 					if( dimStartIndex <= 0 )
@@ -59,7 +64,88 @@ namespace IGE.IO.FileFormats.Blender {
 						dimensionSizes[i] = int.Parse(dimensionSizesText[i]);
 					fieldName = fieldName.Substring(0, dimStartIndex);
 				}
+
+				switch(fieldInfo.Type) {
+					case "char":
+						if( dimensionSizes.Length > 0 ) {
+							stringLength = dimensionSizes[dimensionSizes.Length - 1];
+							int[] newDimSizes = (dimensionSizes.Length > 1) ? new int[dimensionSizes.Length - 1] : null;
+							if( newDimSizes != null ) {
+								for( i = dimensionSizes.Length - 2; i >= 0; i-- )
+									newDimSizes[i] = dimensionSizes[i];
+							}
+							dimensionSizes = newDimSizes;
+							loadType = LoadType.String;
+						}
+						else
+							loadType = LoadType.Char;
+						break;
+					case "uchar": loadType = LoadType.Byte; break;
+					case "short": loadType = LoadType.Int16; break;
+					case "ushort": loadType = LoadType.UInt16; break;
+					case "int": loadType = LoadType.Int32; break;
+					case "uint": loadType = LoadType.UInt32; break;
+					case "long": loadType = LoadType.Int64; break;
+					case "ulong": loadType = LoadType.UInt64; break;
+					case "float": loadType = LoadType.Single; break;
+					case "double": loadType = LoadType.Double; break;
+					default:
+						if( fieldName.StartsWith("(*", StringComparison.InvariantCulture) && fieldName.EndsWith(")()", StringComparison.InvariantCulture) ) {
+							fieldName = fieldName.Substring(2, fieldInfo.Name.Length - 5);
+							loadType = LoadType.Method;
+						}
+						else if( fieldName.StartsWith("*", StringComparison.InvariantCulture) ) {
+							fieldName = fieldName.Substring(1);
+							loadType = LoadType.Pointer;
+						}
+						else
+							loadType = LoadType.Object;
+						break;
+				}
 				
+				valAddress = fieldAddress;
+				
+				if( dimensionSizes == null ) {
+					val = ReadFieldValue(r, ptrSize, endianness, sdna, loadType, fieldInfo.Type, fieldName, valAddress, stringLength, out readSize);
+					if( loadType == LoadType.Method || loadType == LoadType.Pointer )
+						AddField(fieldName, fieldInfo.Type, valAddress, readSize, null, val);
+					else
+						AddField(fieldName, fieldInfo.Type, valAddress, readSize, val, null);
+					valAddress += (ulong)readSize;
+				}
+				else {
+					switch(loadType) {
+						case LoadType.Char: arrayElementType = typeof(char); break;
+						case LoadType.Byte: arrayElementType = typeof(byte); break;
+						case LoadType.Int16: arrayElementType = typeof(short); break;
+						case LoadType.UInt16: arrayElementType = typeof(ushort); break;
+						case LoadType.Int32: arrayElementType = typeof(int); break;
+						case LoadType.UInt32: arrayElementType = typeof(uint); break;
+						case LoadType.Int64: arrayElementType = typeof(long); break;
+						case LoadType.UInt64: arrayElementType = typeof(ulong); break;
+						case LoadType.Single: arrayElementType = typeof(float); break;
+						case LoadType.Double: arrayElementType = typeof(double); break;
+						case LoadType.String: arrayElementType = typeof(string); break;
+						case LoadType.Method: arrayElementType = null; break;
+						case LoadType.Pointer: goto case LoadType.Object;
+						case LoadType.Object: arrayElementType = typeof(BlenderFileObject); break;
+						default: throw new Exception("Unexpected value type");
+					}
+					if( arrayElementType != null ) {
+						arrayType =  arrayElementType.MakeArrayType(dimensionSizes.Length);
+						val = Activator.CreateInstance(arrayType, dimensionSizes);
+					}
+					else {
+						arrayType = null;
+						val = null;
+					}
+					
+					// TODO: load data into arrays
+					
+				}
+				
+				fieldAddress = valAddress;
+				/*
 				if( fieldName.StartsWith("(*", StringComparison.InvariantCulture) && fieldName.EndsWith(")()", StringComparison.InvariantCulture) ) {
 					AddField(
 						BlenderFieldObjectFieldType.Method,
@@ -82,7 +168,32 @@ namespace IGE.IO.FileFormats.Blender {
 					);
 					fieldAddress += (ptrSize == BlenderPointerSize.Ptr64) ? 8UL : 4UL;
 				}
+				*/
 			}
+		}
+		
+		protected dynamic ReadFieldValue(BinaryReader r, BlenderPointerSize ptrSize, Endian endianness, BlenderSDNAFileBlock sdna, LoadType loadType, string typeName, string fieldName, ulong address, int stringLength, out int readSize) {
+			switch(loadType) {
+				case LoadType.Char: readSize = 1; return Encoding.ASCII.GetChars(r.ReadBytes(1))[0];
+				case LoadType.Byte: readSize = 1; return r.ReadByte();
+				case LoadType.Int16: readSize = 2; return r.ReadInt16(endianness);
+				case LoadType.UInt16: readSize = 2; return r.ReadUInt16(endianness);
+				case LoadType.Int32: readSize = 4; return r.ReadInt32(endianness);
+				case LoadType.UInt32: readSize = 4; return r.ReadUInt32(endianness);
+				case LoadType.Int64: readSize = 8; return r.ReadInt64(endianness);
+				case LoadType.UInt64: readSize = 8; return r.ReadUInt64(endianness);
+				case LoadType.Single: readSize = 4; return r.ReadSingle(); // TODO: make extension to load float with specified endianness
+				case LoadType.Double: readSize = 8; return r.ReadDouble(); // TODO: make extension to load double with specified endianness
+				case LoadType.String: readSize = stringLength; return r.ReadFixedSizeString(stringLength, Encoding.ASCII);
+				case LoadType.Method: goto case LoadType.Pointer;
+				case LoadType.Pointer:
+					readSize = (ptrSize == BlenderPointerSize.Ptr64) ? 8 : 4;
+					return (ptrSize == BlenderPointerSize.Ptr64) ? r.ReadUInt64() : r.ReadUInt32();
+				case LoadType.Object:
+					readSize = sdna.StructureIndex[typeName].Size;
+					return new BlenderFileObject(r, address, ptrSize, endianness, sdna, typeName);
+			}
+			throw new Exception("Unexpected value type");
 		}
 		
 		public override bool TryGetMember(GetMemberBinder binder, out object result) {
@@ -116,10 +227,6 @@ namespace IGE.IO.FileFormats.Blender {
 					}
 					else {
 						if( field.Address == address ) {
-							if( field.BaseType == BlenderFieldObjectFieldType.Method )
-								throw new Exception("Unexpected pointer pointing to another pointer, which in turn points to a method");
-							if( field.BaseType == BlenderFieldObjectFieldType.Pointer )
-								throw new Exception("Unexpected pointer pointing to another pointer");
 							val = field.Value;
 							return true;
 						}
@@ -131,11 +238,11 @@ namespace IGE.IO.FileFormats.Blender {
 			return false;
 		}
 
-		public BlenderFieldObjectFieldType GetFieldBaseType(string fieldName) {
+		public bool IsPointerType(string fieldName) {
 			BlenderFileObjectField field;
 			if( !m_Fields.TryGetValue(fieldName, out field) )
-				return BlenderFieldObjectFieldType.None;
-			return field.BaseType;
+				throw new Exception(String.Format("Dynamic field '{0}' not found", fieldName));
+			return field.Pointer != null;
 		}
 		
 		public string GetFieldType(string fieldName) {
@@ -149,14 +256,31 @@ namespace IGE.IO.FileFormats.Blender {
 			m_Fields.Add(name, field);
 		}
 		
-		public void AddField(BlenderFieldObjectFieldType baseType, string typeName, string name, object val, ulong address, int size) {
+		public void AddField(string name, string typeName, ulong address, int size, dynamic val, dynamic pointer) {
 			AddField(name, new BlenderFileObjectField {
-				BaseType = baseType,
+				TypeName = typeName,
 				Address = address,
 				Size = size,
-				TypeName = typeName,
-				Value = val
+				Value = val,
+				Pointer = pointer
 			});
 		}
+
+		public enum LoadType {
+			Char,
+			Byte,
+			Int16,
+			UInt16,
+			Int32,
+			UInt32,
+			Int64,
+			UInt64,
+			Single,
+			Double,
+			String,
+			Pointer,
+			Object,
+			Method
+		};
 	}
 }
