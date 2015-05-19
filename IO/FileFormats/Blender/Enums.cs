@@ -24,4 +24,42 @@ namespace IGE.IO.FileFormats.Blender {
 		Ptr32,
 		Ptr64
 	}
+
+	public enum BlenderInternalType : byte {
+		Char,
+		Byte,
+		Int16,
+		UInt16,
+		Int32,
+		UInt32,
+		Int64,
+		UInt64,
+		Single,
+		Double,
+		String,
+		Object,
+		Method
+	};
+	
+	public enum BlenderPointerState : byte {
+		/// <summary>
+		/// Pointer is new and was not tried to resolve yet.
+		/// </summary>
+		Unknown,
+		
+		/// <summary>
+		/// Object or field could not be found at specified address.
+		/// </summary>
+		Failed,
+		
+		/// <summary>
+		/// Pointer is being currently resolved. if encountered a pointer with this state when resolving then it means there is a pointer loop.
+		/// </summary>
+		Resolving,
+		
+		/// <summary>
+		/// Pointer is resolved. No real use for that state since resolved pointers are replaced by values they have been resolved to.
+		/// </summary>
+		Resolved,
+	}
 }

@@ -95,6 +95,7 @@
     <Compile Include="IO\FileFormats\Blender\BlenderFileObject.cs" />
     <Compile Include="IO\FileFormats\Blender\BlenderFileObjectField.cs" />
     <Compile Include="IO\FileFormats\Blender\BlenderFileStructure.cs" />
+    <Compile Include="IO\FileFormats\Blender\BlenderPointer.cs" />
     <Compile Include="IO\FileFormats\Blender\BlenderSDNAFileBlock.cs" />
     <Compile Include="IO\FileFormats\Blender\Enums.cs" />
     <Compile Include="IO\FileFormats\MazanovModelAnimationFile.cs" />

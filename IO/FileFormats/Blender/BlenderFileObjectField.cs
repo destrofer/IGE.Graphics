@@ -20,11 +20,12 @@
 using System;
 
 namespace IGE.IO.FileFormats.Blender {
-	public struct BlenderFileObjectField {
+	public class BlenderFileObjectField {
+		public BlenderInternalType Type;
 		public ulong Address;
 		public int Size;
 		public string TypeName;
 		public dynamic Value;
-		public dynamic Pointer;
+		public bool IsPointer;
 	}
 }

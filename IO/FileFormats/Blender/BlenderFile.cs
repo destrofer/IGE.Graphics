@@ -39,11 +39,14 @@ namespace IGE.IO.FileFormats.Blender {
 						
 						Dictionary<string, List<BlenderFileBlockHeader>> BlockCodeIndex = new Dictionary<string, List<BlenderFileBlockHeader>>();
 						Dictionary<int, List<BlenderFileBlockHeader>> BlockSDNAIndex = new Dictionary<int, List<BlenderFileBlockHeader>>();
+						List<BlenderFileBlockHeader> allBlockHeaders = new List<BlenderFileBlockHeader>();
 						List<BlenderFileBlockHeader> indexList;
 						
 						do {
 							bfbh = new BlenderFileBlockHeader(r, bfh.PointerSize, bfh.Endianness);
 							GameDebugger.Log(LogLevel.VerboseDebug, "{0} size={1} addr=0x{2:X16} SDNA={3} count={4}", bfbh.Code, bfbh.Size, bfbh.OldMemoryAddress, bfbh.SDNAIndex, bfbh.Count);
+							
+							allBlockHeaders.Add(bfbh);
 							
 							// add to index by block code
 							if( !BlockCodeIndex.TryGetValue(bfbh.Code, out indexList) ) {
@@ -68,7 +71,31 @@ namespace IGE.IO.FileFormats.Blender {
 							SDNA = new BlenderSDNAFileBlock(r, bfh.PointerSize, bfh.Endianness);
 						}
 						else
-							throw new Exception("DNA1 block not found");							
+							throw new Exception("DNA1 block not found");
+						
+						List<BlenderFileObject[]> loadedData = new List<BlenderFileObject[]>();
+						BlenderFileObject[] arr;
+						
+						int i;
+						ulong addr;
+						foreach( BlenderFileBlockHeader bh in allBlockHeaders ) {
+							if( bh.Count <= 0 || bh.Size <= 0 || bh.Code.Equals("ENDB", StringComparison.Ordinal) || bh.Code.Equals("ENDB", StringComparison.Ordinal) )
+								continue;
+							r.BaseStream.Position = bh.DataPosition;
+							addr = bh.OldMemoryAddress;
+							arr = new BlenderFileObject[bh.Count];
+							GameDebugger.Log(LogLevel.VerboseDebug, "LOADING {0} size={1} addr=0x{2:X16} SDNA={3} count={4}", bh.Code, bh.Size, bh.OldMemoryAddress, bh.SDNAIndex, bh.Count);
+							for( i = 0; i < bh.Count; i++ ) {
+								arr[i] = new BlenderFileObject(r, addr, bfh.PointerSize, bfh.Endianness, SDNA, bh.SDNAIndex);
+								addr += (ulong)SDNA.Structures[bh.SDNAIndex].Size;
+							}
+							loadedData.Add(arr);
+						}
+						
+						foreach( BlenderFileObject[] data in loadedData ) {
+							for( i = 0; i < data.Length; i++ )
+								data[i].Log("", 0);
+						}
 					}
 					else
 						throw new Exception("Not a .blend file");
