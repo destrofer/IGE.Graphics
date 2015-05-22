@@ -39,23 +39,22 @@ namespace IGE.IO.FileFormats.Blender {
 			return m_Address <= address && address < m_Address + (ulong)m_Size;
 		}
 		
-		public BlenderFileObject(BinaryReader r, ulong address, BlenderPointerSize ptrSize, Endian endianness, BlenderSDNAFileBlock sdna, int sdnaIndex)
-			: this(r, address, ptrSize, endianness, sdna, sdna.Structures[sdnaIndex].Name)
+		public BlenderFileObject(BinaryReader r, BlenderFile file, ulong address, int sdnaIndex)
+			: this(r, file, address, file.SDNA.Structures[sdnaIndex].Name)
 		{
 		}
 		
-		public BlenderFileObject(BinaryReader r, ulong address, BlenderPointerSize ptrSize, Endian endianness, BlenderSDNAFileBlock sdna, string typeName) {
+		public BlenderFileObject(BinaryReader r, BlenderFile file, ulong address, string typeName) {
 			ulong fieldAddress = address, valAddress;
-			BlenderFileStructure structInfo = sdna.StructureIndex[typeName];
+			BlenderFileStructure structInfo = file.SDNA.StructureIndex[typeName];
 			string fieldName;
 			BlenderInternalType loadType;
 			int dimStartIndex, stringLength, readSize, totalReadSize, i;
 			string[] dimensionSizesText;
 			int[] dimensionSizes;
 			object[] dimensionSizesForReflection;
-			dynamic val, ptrVal, v;
-			Type arrayElementType;
-			bool isPointer, pointerIsMultidimensional;
+			dynamic val, v;
+			int pointerDimensions;
 			
 			m_Address = address;
 			m_Size = structInfo.Size;
@@ -64,8 +63,7 @@ namespace IGE.IO.FileFormats.Blender {
 				fieldName = fieldInfo.Name;
 				dimensionSizes = null;
 				stringLength = 0;
-				isPointer = false;
-				pointerIsMultidimensional = false;
+				pointerDimensions = 0;
 
 				if( fieldName.EndsWith("]", StringComparison.InvariantCulture) ) {
 					dimStartIndex = fieldName.IndexOf('[');
@@ -78,13 +76,10 @@ namespace IGE.IO.FileFormats.Blender {
 					fieldName = fieldName.Substring(0, dimStartIndex);
 				}
 
-				if( fieldName.StartsWith("*", StringComparison.InvariantCulture) ) {
-					fieldName = fieldName.Substring(1);
-					isPointer = true;
-					pointerIsMultidimensional = fieldName.StartsWith("*", StringComparison.InvariantCulture);
-					if( pointerIsMultidimensional )
-						fieldName = fieldName.TrimStart('*');
-				}				
+				while( pointerDimensions < fieldName.Length && fieldName[pointerDimensions] == '*' )
+					pointerDimensions++;
+				if( pointerDimensions > 0 )
+					fieldName = fieldName.Substring(pointerDimensions);
 
 				switch(fieldInfo.Type) {
 					case "char":
@@ -117,7 +112,7 @@ namespace IGE.IO.FileFormats.Blender {
 							fieldName = fieldName.Substring(2, fieldInfo.Name.Length - 5);
 							loadType = BlenderInternalType.Method;
 						}
-						else if( isPointer || !fieldInfo.Type.Equals("void", StringComparison.Ordinal) )
+						else if( pointerDimensions > 0 || !fieldInfo.Type.Equals("void", StringComparison.Ordinal) )
 							loadType = BlenderInternalType.Object;
 						else
 							throw new Exception("Unexpected non-pointer void");
@@ -125,17 +120,16 @@ namespace IGE.IO.FileFormats.Blender {
 				}
 				
 				if( dimensionSizes == null ) {
-					val = ReadFieldValue(r, ptrSize, endianness, sdna, loadType, fieldInfo.Type, fieldAddress, stringLength, isPointer, pointerIsMultidimensional, out readSize);
+					val = ReadFieldValue(r, file, loadType, fieldInfo.Type, fieldAddress, stringLength, pointerDimensions, out readSize);
 					
 					if( loadType == BlenderInternalType.Method )
-						AddField(fieldName, loadType, fieldInfo.Type, fieldAddress, readSize, isPointer, null);
+						AddField(fieldName, loadType, fieldInfo.Type, fieldAddress, readSize, pointerDimensions > 0, null);
 					else
-						AddField(fieldName, loadType, fieldInfo.Type, fieldAddress, readSize, isPointer, val);
+						AddField(fieldName, loadType, fieldInfo.Type, fieldAddress, readSize, pointerDimensions > 0, val);
 					
 					fieldAddress += (ulong)readSize;
 				}
 				else {
-					ptrVal = null;
 					val = null;
 					
 					dimensionSizesForReflection = new object[dimensionSizes.Length];
@@ -150,7 +144,7 @@ namespace IGE.IO.FileFormats.Blender {
 					totalReadSize = 0;
 					
 					do {
-						v = ReadFieldValue(r, ptrSize, endianness, sdna, loadType, fieldInfo.Type, valAddress, stringLength, isPointer, pointerIsMultidimensional, out readSize);
+						v = ReadFieldValue(r, file, loadType, fieldInfo.Type, valAddress, stringLength, pointerDimensions, out readSize);
 						
 						totalReadSize += readSize;
 						valAddress += (ulong)readSize;
@@ -162,37 +156,37 @@ namespace IGE.IO.FileFormats.Blender {
 							idx[i] = 0;
 					} while(i >= 0);
 					
-					AddField(fieldName, loadType, fieldInfo.Type, fieldAddress, totalReadSize, isPointer, val);
+					AddField(fieldName, loadType, fieldInfo.Type, fieldAddress, totalReadSize, pointerDimensions > 0, val);
 					
 					fieldAddress = valAddress;
 				}
 			}
 		}
 		
-		protected dynamic ReadFieldValue(BinaryReader r, BlenderPointerSize ptrSize, Endian endianness, BlenderSDNAFileBlock sdna, BlenderInternalType loadType, string typeName, ulong address, int stringLength, bool isPointer, bool pointerIsMultidimensional, out int readSize) {
-			if( isPointer ) {
-				readSize = (ptrSize == BlenderPointerSize.Ptr64) ? 8 : 4;
-				return new BlenderPointer((ptrSize == BlenderPointerSize.Ptr64) ? r.ReadUInt64() : (ulong)r.ReadUInt32(), pointerIsMultidimensional);
+		protected dynamic ReadFieldValue(BinaryReader r, BlenderFile file, BlenderInternalType loadType, string typeName, ulong address, int stringLength, int pointerDimensions, out int readSize) {
+			if( pointerDimensions > 0 ) {
+				readSize = (file.Header.PointerSize == BlenderPointerSize.Ptr64) ? 8 : 4;
+				return new BlenderPointer((file.Header.PointerSize == BlenderPointerSize.Ptr64) ? r.ReadUInt64() : (ulong)r.ReadUInt32(), pointerDimensions);
 			}
 			switch(loadType) {
 				// case InternalType.Char: readSize = 1; return Encoding.ASCII.GetChars(r.ReadBytes(1))[0];
 				case BlenderInternalType.Char: readSize = 1; return r.ReadSByte();
 				case BlenderInternalType.Byte: readSize = 1; return r.ReadByte();
-				case BlenderInternalType.Int16: readSize = 2; return r.ReadInt16(endianness);
-				case BlenderInternalType.UInt16: readSize = 2; return r.ReadUInt16(endianness);
-				case BlenderInternalType.Int32: readSize = 4; return r.ReadInt32(endianness);
-				case BlenderInternalType.UInt32: readSize = 4; return r.ReadUInt32(endianness);
-				case BlenderInternalType.Int64: readSize = 8; return r.ReadInt64(endianness);
-				case BlenderInternalType.UInt64: readSize = 8; return r.ReadUInt64(endianness);
-				case BlenderInternalType.Single: readSize = 4; return r.ReadSingle(endianness);
-				case BlenderInternalType.Double: readSize = 8; return r.ReadDouble(endianness);
+				case BlenderInternalType.Int16: readSize = 2; return r.ReadInt16(file.Header.Endianness);
+				case BlenderInternalType.UInt16: readSize = 2; return r.ReadUInt16(file.Header.Endianness);
+				case BlenderInternalType.Int32: readSize = 4; return r.ReadInt32(file.Header.Endianness);
+				case BlenderInternalType.UInt32: readSize = 4; return r.ReadUInt32(file.Header.Endianness);
+				case BlenderInternalType.Int64: readSize = 8; return r.ReadInt64(file.Header.Endianness);
+				case BlenderInternalType.UInt64: readSize = 8; return r.ReadUInt64(file.Header.Endianness);
+				case BlenderInternalType.Single: readSize = 4; return r.ReadSingle(file.Header.Endianness);
+				case BlenderInternalType.Double: readSize = 8; return r.ReadDouble(file.Header.Endianness);
 				case BlenderInternalType.String: readSize = stringLength; return r.ReadFixedSizeString(stringLength, Encoding.ASCII);
 				case BlenderInternalType.Method:
-					readSize = (ptrSize == BlenderPointerSize.Ptr64) ? 8 : 4;
-					return (ptrSize == BlenderPointerSize.Ptr64) ? r.ReadUInt64() : (ulong)r.ReadUInt32();
+					readSize = (file.Header.PointerSize == BlenderPointerSize.Ptr64) ? 8 : 4;
+					return (file.Header.PointerSize == BlenderPointerSize.Ptr64) ? r.ReadUInt64() : (ulong)r.ReadUInt32();
 				case BlenderInternalType.Object:
-					readSize = sdna.StructureIndex[typeName].Size;
-					return new BlenderFileObject(r, address, ptrSize, endianness, sdna, typeName);
+					readSize = file.SDNA.StructureIndex[typeName].Size;
+					return new BlenderFileObject(r, file, address, typeName);
 			}
 			throw new Exception("Unexpected value type");
 		}
@@ -237,7 +231,7 @@ namespace IGE.IO.FileFormats.Blender {
 			if( callback == null )
 				return true; // no callback - no walking
 			foreach(KeyValuePair<string, BlenderFileObjectField> pair in m_Fields) {
-				if( recursive && pair.Value.Type == BlenderInternalType.Object ) {
+				if( recursive && !pair.Value.IsPointer && pair.Value.Type == BlenderInternalType.Object ) {
 					if( pair.Value.Value != null ) {
 						if( pair.Value.Value.GetType().IsArray ) {
 							foreach( BlenderFileObject sub in pair.Value.Value )
@@ -258,25 +252,41 @@ namespace IGE.IO.FileFormats.Blender {
 			return m_FirstField;
 		}
 		
-		public void ResolvePointers(List<BlenderFileObject[]> loadedData) {
-			/*WalkFields(true, (name, field) => {
-				if( field.Type != InternalType.Pointer )
+		public void ResolvePointers(BlenderFile file) {
+			WalkFields(true, (name, field) => {
+				if( !field.IsPointer )
 					return true;
-				ResolvePointer(field, loadedData) || rerun;
+				
+				// ResolvePointerField(field, file);
 				return true;
-			});*/
+			});
 		}
 		
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="field"></param>
-		/// <param name="loadedData"></param>
-		/// <returns><b>true</b> if pointer was successfully resolved</returns>
-		public bool ResolvePointer(BlenderFileObjectField field, List<BlenderFileObject[]> loadedData) {
-			//if( field.PointerState == PointerResolveState.Resolving || field.PointerState == PointerResolveState.Failed )
-				//return false;
-				return false;
+		/// <param name="file"></param>
+		public void ResolvePointerField(BlenderFileObjectField field, BlenderFile file) {
+			// TODO: add support for array of pointers
+			BlenderPointer ptr = (BlenderPointer)field.Value;
+			if( ptr.State == BlenderPointerState.Resolved ) {
+				field.Value = ptr.Value;
+				return;
+			}
+			if( ptr.State == BlenderPointerState.Resolving || ptr.State == BlenderPointerState.Failed ) {
+				field.Value = null;
+				return;
+			}
+			
+			// This is needed to avoid infinite loops
+			ptr.State = BlenderPointerState.Resolving;
+			field.Value = ptr;
+			
+			dynamic resolvedValue = null;
+			// TODO: resolve the pointer
+			
+			field.Value = resolvedValue;
 		}
 		
 		/// <summary>

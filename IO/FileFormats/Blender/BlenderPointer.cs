@@ -24,18 +24,18 @@ namespace IGE.IO.FileFormats.Blender {
 		public readonly ulong Address;
 		public BlenderPointerState State;
 		public dynamic Value;
-		public bool Multidimensional;
+		public int Dimensions;
 		
 		public static readonly BlenderPointer Null = new BlenderPointer(0UL);
 
-		public BlenderPointer(ulong address) : this(address, false) {
+		public BlenderPointer(ulong address) : this(address, 1) {
 		}
 		
-		public BlenderPointer(ulong address, bool multidimensional) {
+		public BlenderPointer(ulong address, int dimensions) {
 			Address = address;
 			State = (address == 0UL) ? BlenderPointerState.Resolved : BlenderPointerState.Unknown;
 			Value = null;
-			Multidimensional = multidimensional;
+			Dimensions = dimensions;
 		}
 		
 		#region Equals and GetHashCode implementation

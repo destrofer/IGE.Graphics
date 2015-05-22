@@ -27,7 +27,7 @@ namespace IGE.IO.FileFormats.Blender {
 		public BlenderFileStructure[] Structures = null;
 		public Dictionary<string, BlenderFileStructure> StructureIndex = null;
 		
-		public BlenderSDNAFileBlock(BinaryReader r, BlenderPointerSize pointerSize, Endian endianness) {
+		public BlenderSDNAFileBlock(BinaryReader r, BlenderFile file) {
 			int i, j, idx, nameCount, typeCount, structCount, fieldCount;
 			string id;
 			long basePos, pos;
@@ -48,7 +48,7 @@ namespace IGE.IO.FileFormats.Blender {
 			if( !id.Equals("NAME", StringComparison.Ordinal) )
 				throw new Exception("NAME block identifier expected");
 			
-			nameCount = r.ReadInt32(endianness);
+			nameCount = r.ReadInt32(file.Header.Endianness);
 			names = new string[nameCount];
 			
 			for( i = 0; i < nameCount; i++ ) {
@@ -65,7 +65,7 @@ namespace IGE.IO.FileFormats.Blender {
 			if( !id.Equals("TYPE", StringComparison.Ordinal) )
 				throw new Exception("TYPE block identifier expected");
 			
-			typeCount = r.ReadInt32(endianness);
+			typeCount = r.ReadInt32(file.Header.Endianness);
 			typeNames = new string[typeCount];
 			typeSizes = new int[typeCount];
 			
@@ -84,7 +84,7 @@ namespace IGE.IO.FileFormats.Blender {
 				throw new Exception("TLEN block identifier expected");
 
 			for( i = 0; i < typeCount; i++ ) {
-				typeSizes[i] = r.ReadInt16(endianness);
+				typeSizes[i] = r.ReadInt16(file.Header.Endianness);
 				GameDebugger.Log(LogLevel.VerboseDebug, "typeSizes[{0}]={1}", i, typeSizes[i]);
 			}
 			
@@ -97,26 +97,27 @@ namespace IGE.IO.FileFormats.Blender {
 			if( !id.Equals("STRC", StringComparison.Ordinal) )
 				throw new Exception("STRC block identifier expected");
 			
-			structCount = r.ReadInt32(endianness);
+			structCount = r.ReadInt32(file.Header.Endianness);
 			Structures = new BlenderFileStructure[structCount];
 			StructureIndex = new Dictionary<string, BlenderFileStructure>();
 			for( i = 0; i < structCount; i++ ) {
 				st = new BlenderFileStructure();
-				idx = r.ReadInt16(endianness);
+				idx = r.ReadInt16(file.Header.Endianness);
+				st.Index = i;
 				st.Name = typeNames[idx];
 				st.Size = typeSizes[idx];
 				
-				fieldCount = r.ReadInt16(endianness);
+				fieldCount = r.ReadInt16(file.Header.Endianness);
 				st.Fields = new BlenderFileField[fieldCount];
 				
-				GameDebugger.Log(LogLevel.VerboseDebug, "struct #{0} {1} (size={2}, fields={3})", i, st.Name, st.Size, fieldCount);
+				GameDebugger.Log(LogLevel.VerboseDebug, "struct #{0} {1} (size={2}, fields={3})", st.Index, st.Name, st.Size, fieldCount);
 
 				for( j = 0; j < fieldCount; j++ ) {
 					fld = new BlenderFileField();
-					idx = r.ReadInt16(endianness);
+					idx = r.ReadInt16(file.Header.Endianness);
 					fld.Type = typeNames[idx];
 					fld.Size = typeSizes[idx];
-					fld.Name = names[r.ReadInt16(endianness)];
+					fld.Name = names[r.ReadInt16(file.Header.Endianness)];
 					st.Fields[j] = fld;
 					GameDebugger.Log(LogLevel.VerboseDebug, "    {0} {1} (size={2})", fld.Type, fld.Name, fld.Size);
 				}
