@@ -85,15 +85,19 @@ namespace IGE.Graphics {
 		}
 
 		public static void SetMode3D(float aspect_ratio) {
-			GL.MatrixMode(MatrixMode.Projection);
-			GL.LoadIdentity();
 			// GameDebugger.Log("{0} {1} {2} {3}", m_View, m_View.Width, m_View.Height, (m_View.Height != 0.0f) ? ((float)m_View.Width / (float)m_View.Height) : 1.0f);
 			Matrix4 projection = Matrix4.Perspective(
 				m_FOV * (float)Math.PI / 360.0f,	// by default FOV = 90.0f
 				aspect_ratio,
 				m_MinDepth, m_MaxDepth // min and max depth must be positive
 			);
-			GL.LoadMatrix(ref projection);
+			SetMode3D(ref projection);
+		}
+
+		public static void SetMode3D(ref Matrix4 projectionMatrix) {
+			GL.MatrixMode(MatrixMode.Projection);
+			GL.LoadMatrix(ref projectionMatrix);
+			
 			GL.MatrixMode(MatrixMode.Modelview);
 			GL.LoadIdentity();
 
