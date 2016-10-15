@@ -90,7 +90,7 @@
     <Compile Include="IOpenGLWindow.cs" />
     <Compile Include="IO\FileFormats\BitmapFile.cs" />
     <Compile Include="IO\FileFormats\Blender\BlenderFile.cs" />
-    <Compile Include="IO\FileFormats\Blender\BlenderFileBlockHeader.cs" />
+    <Compile Include="IO\FileFormats\Blender\BlenderFileBlock.cs" />
     <Compile Include="IO\FileFormats\Blender\BlenderFileField.cs" />
     <Compile Include="IO\FileFormats\Blender\BlenderFileHeader.cs" />
     <Compile Include="IO\FileFormats\Blender\BlenderFileObject.cs" />

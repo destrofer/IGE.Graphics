@@ -27,75 +27,63 @@ using System.Dynamic;
 
 namespace IGE.IO.FileFormats.Blender {
 	public class BlenderFile {
+		public BlenderFileHeader Header;
 		public BlenderSDNAFileBlock SDNA = null;
+		public List<BlenderFileBlock> Blocks = null;
 		
 		public BlenderFile(string fileName) {
 			try {
 				using(BinaryReader r = new BinaryReader(new FileStream(fileName, FileMode.Open))) {
-					BlenderFileHeader bfh = new BlenderFileHeader(r);
-					if( bfh.Identifier.Equals("BLENDER", StringComparison.Ordinal) ) {
-						GameDebugger.Log(LogLevel.VerboseDebug, "{0} ptr={1} endianness={2} version={3}", bfh.Identifier, bfh.PointerSize, bfh.Endianness, bfh.VersionNumber);
-						BlenderFileBlockHeader bfbh;
+					Header = new BlenderFileHeader(r);
+					if( Header.Identifier.Equals("BLENDER", StringComparison.Ordinal) ) {
+						GameDebugger.Log(LogLevel.VerboseDebug, "{0} ptr={1} endianness={2} version={3}", Header.Identifier, Header.PointerSize, Header.Endianness, Header.VersionNumber);
+						BlenderFileBlock block;
 						
-						Dictionary<string, List<BlenderFileBlockHeader>> BlockCodeIndex = new Dictionary<string, List<BlenderFileBlockHeader>>();
-						Dictionary<int, List<BlenderFileBlockHeader>> BlockSDNAIndex = new Dictionary<int, List<BlenderFileBlockHeader>>();
-						List<BlenderFileBlockHeader> allBlockHeaders = new List<BlenderFileBlockHeader>();
-						List<BlenderFileBlockHeader> indexList;
+						Dictionary<string, List<BlenderFileBlock>> BlockCodeIndex = new Dictionary<string, List<BlenderFileBlock>>();
+						Dictionary<int, List<BlenderFileBlock>> BlockSDNAIndex = new Dictionary<int, List<BlenderFileBlock>>();
+						Blocks = new List<BlenderFileBlock>();
+						List<BlenderFileBlock> indexList;
 						
 						do {
-							bfbh = new BlenderFileBlockHeader(r, bfh.PointerSize, bfh.Endianness);
-							GameDebugger.Log(LogLevel.VerboseDebug, "{0} size={1} addr=0x{2:X16} SDNA={3} count={4}", bfbh.Code, bfbh.Size, bfbh.OldMemoryAddress, bfbh.SDNAIndex, bfbh.Count);
+							block = new BlenderFileBlock(r, this);
+							GameDebugger.Log(LogLevel.VerboseDebug, "{0} size={1} addr=0x{2:X16} SDNA={3} count={4}", block.Code, block.Size, block.OldMemoryAddress, block.SDNAIndex, block.Count);
 							
-							allBlockHeaders.Add(bfbh);
+							Blocks.Add(block);
 							
 							// add to index by block code
-							if( !BlockCodeIndex.TryGetValue(bfbh.Code, out indexList) ) {
-								indexList = new List<BlenderFileBlockHeader>();
-								BlockCodeIndex.Add(bfbh.Code, indexList);
+							if( !BlockCodeIndex.TryGetValue(block.Code, out indexList) ) {
+								indexList = new List<BlenderFileBlock>();
+								BlockCodeIndex.Add(block.Code, indexList);
 							}
-							indexList.Add(bfbh);
+							indexList.Add(block);
 
 							// add to index by SDNA type
-							if( !BlockSDNAIndex.TryGetValue(bfbh.SDNAIndex, out indexList) ) {
-								indexList = new List<BlenderFileBlockHeader>();
-								BlockSDNAIndex.Add(bfbh.SDNAIndex, indexList);
+							if( !BlockSDNAIndex.TryGetValue(block.SDNAIndex, out indexList) ) {
+								indexList = new List<BlenderFileBlock>();
+								BlockSDNAIndex.Add(block.SDNAIndex, indexList);
 							}
-							indexList.Add(bfbh);
+							indexList.Add(block);
 							
-							if( bfbh.Size > 0 )
-								r.BaseStream.Position = r.BaseStream.Position + bfbh.Size;
-						} while(!bfbh.Code.Equals("ENDB", StringComparison.Ordinal));
+							if( block.Size > 0 )
+								r.BaseStream.Position = r.BaseStream.Position + block.Size;
+						} while(!block.Code.Equals("ENDB", StringComparison.Ordinal));
 						
 						if( BlockCodeIndex.TryGetValue("DNA1", out indexList) ) {
 							r.BaseStream.Position = indexList[0].DataPosition;
-							SDNA = new BlenderSDNAFileBlock(r, bfh.PointerSize, bfh.Endianness);
+							SDNA = new BlenderSDNAFileBlock(r, this);
 						}
 						else
 							throw new Exception("DNA1 block not found");
 						
-						List<BlenderFileObject[]> loadedData = new List<BlenderFileObject[]>();
-						BlenderFileObject[] arr;
+						foreach( BlenderFileBlock blk in Blocks )
+							blk.Load(r, this);
+
+						foreach( BlenderFileBlock blk in Blocks )
+							blk.Process(this);
 						
-						int i;
-						ulong addr;
-						foreach( BlenderFileBlockHeader bh in allBlockHeaders ) {
-							if( bh.Count <= 0 || bh.Size <= 0 || bh.Code.Equals("ENDB", StringComparison.Ordinal) || bh.Code.Equals("ENDB", StringComparison.Ordinal) )
-								continue;
-							r.BaseStream.Position = bh.DataPosition;
-							addr = bh.OldMemoryAddress;
-							arr = new BlenderFileObject[bh.Count];
-							GameDebugger.Log(LogLevel.VerboseDebug, "LOADING {0} size={1} addr=0x{2:X16} SDNA={3} count={4}", bh.Code, bh.Size, bh.OldMemoryAddress, bh.SDNAIndex, bh.Count);
-							for( i = 0; i < bh.Count; i++ ) {
-								arr[i] = new BlenderFileObject(r, addr, bfh.PointerSize, bfh.Endianness, SDNA, bh.SDNAIndex);
-								addr += (ulong)SDNA.Structures[bh.SDNAIndex].Size;
-							}
-							loadedData.Add(arr);
-						}
+						foreach( BlenderFileBlock blk in Blocks )
+							blk.Log();
 						
-						foreach( BlenderFileObject[] data in loadedData ) {
-							for( i = 0; i < data.Length; i++ )
-								data[i].Log("", 0);
-						}
 					}
 					else
 						throw new Exception("Not a .blend file");

@@ -21,6 +21,7 @@ using System;
 
 namespace IGE.IO.FileFormats.Blender {
 	public struct BlenderFileStructure {
+		public int Index;
 		public string Name;
 		public int Size;
 		public BlenderFileField[] Fields;
