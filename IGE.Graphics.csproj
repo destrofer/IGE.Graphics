@@ -56,6 +56,7 @@
     <Compile Include="ComplexImage.cs" />
     <Compile Include="ComplexImageComponent.cs" />
     <Compile Include="FragmentShader.cs" />
+    <Compile Include="FrameBuffer.cs" />
     <Compile Include="GraphicsUtils.cs" />
     <Compile Include="GUI\Backgrounds\GradientBackground.cs" />
     <Compile Include="GUI\Backgrounds\SolidBackground.cs" />
@@ -114,6 +115,8 @@
     <Compile Include="OpenGL\GL\GL.Delegates.cs" />
     <Compile Include="OpenGL\GL\GL.PublicInterface.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RenderBuffer.cs" />
+    <Compile Include="RenderToTextureBuffer.cs" />
     <Compile Include="Shader.cs" />
     <Compile Include="ShaderAutoUniformInfo.cs" />
     <Compile Include="ShaderObject.cs" />
