@@ -57,6 +57,27 @@ namespace IGE.Graphics {
 			m_U2 = m_U1 + (float)m_Width / (float)texture.Width;
 			m_V2 = m_V1 + (float)m_Height / (float)texture.Height;
 		}
+
+		/// <summary>
+		/// Constructs an Image object using part (defined by u,v,width and height) of passed texture and passed center coordinates.
+		/// This constructor is designed to work with texture instances that have not been loaded yet, but their size is already known.
+		/// </summary>
+		/// <param name="texture">Reference to a loaded texture</param>
+		/// <param name="u">U coordinate on texture of the cutout's left top corner (in pixels)</param>
+		/// <param name="v">V coordinate on texture of the cutout's left top corner (in pixels)</param>
+		/// <param name="width">Width of cutout (in pixels)</param>
+		/// <param name="height">Height of cutout (in pixels)</param>
+		/// <param name="textureWidth">Width of texture (in pixels)</param>
+		/// <param name="textureHeight">Height of texture (in pixels)</param>
+		public SimpleImage(Texture texture, int u, int v, int width, int height, int textureWidth, int textureHeight) {
+			m_Texture = texture;
+			m_U1 = (float)u / (float)textureWidth;
+			m_V1 = (float)v / (float)textureHeight;
+			m_Width = (width <= 0) ? textureWidth : width;
+			m_Height = (height <= 0) ? textureHeight : height;
+			m_U2 = m_U1 + (float)m_Width / (float)textureWidth;
+			m_V2 = m_V1 + (float)m_Height / (float)textureHeight;
+		}
 		
 		public virtual void Render() {
 			m_Texture.Bind();
