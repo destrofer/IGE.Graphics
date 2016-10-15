@@ -86,6 +86,27 @@ namespace IGE.Graphics {
 		public Texture(string filename, TextureMinFilter min_filter, TextureMagFilter mag_filter) : this() {
 			Load(filename, min_filter, mag_filter);
 		}
+
+		/// <summary>
+		/// Creates a texture with memory allocated, but undefined pixels.
+		/// Useful when texture is intended to be used as framebuffer render target.
+		/// </summary>
+		/// <param name="width"></param>
+		/// <param name="height"></param>
+		public Texture(int width, int height) : this(width, height, TextureMinFilter.Nearest, TextureMagFilter.Nearest) {
+		}
+
+		/// <summary>
+		/// Creates a texture with memory allocated, but undefined pixels.
+		/// Useful when texture is intended to be used as framebuffer render target.
+		/// </summary>
+		/// <param name="width"></param>
+		/// <param name="height"></param>
+		/// <param name="min_filter"></param>
+		/// <param name="mag_filter"></param>
+		public Texture(int width, int height, TextureMinFilter min_filter, TextureMagFilter mag_filter) : this() {
+			Create(width, height);
+		}
 		
 		public Texture(int width, int height, byte[] pixels) : this() {
 			Load(width, height, pixels);
@@ -110,29 +131,52 @@ namespace IGE.Graphics {
 			m_LastError = TextureLoadError.NoError;
 			return true;
 		}
+
+		public bool Create(int width, int height) {
+			return Load(width, height, null);
+		}
+
+		public bool Create(int width, int height, TextureMinFilter min_filter, TextureMagFilter mag_filter) {
+			return Load(width, height, null, min_filter, mag_filter);
+		}
 		
 		public bool Load(int width, int height, byte[] pixels) {
 			if( !GenTexId() )
 				return false;
 				
 			m_LastError = TextureLoadError.NoError;
-			
-			lock(pixels.SyncRoot) {
-				unsafe {
-					fixed(byte *pix = &pixels[0]) {
-						m_Width = width;
-						m_Height = height;
-						m_PixelSizeS = 1.0f / (float)m_Width;
-						m_PixelSizeT = 1.0f / (float)m_Height;
 
-						Bind();
-						GL.TexImage2D(
-							TextureTarget.Texture2D,
-							0, InternalPixelFormat.Rgba8,
-							width, height,
-							0, PixelFormatEnum.Bgra,
-							IGE.Graphics.OpenGL.PixelType.UnsignedByte, pix
-						);
+			m_Width = width;
+			m_Height = height;
+			m_PixelSizeS = 1.0f / (float)m_Width;
+			m_PixelSizeT = 1.0f / (float)m_Height;
+
+			Bind();
+			
+			if( pixels == null ) {
+				GL.TexImage2D(
+					TextureTarget.Texture2D,
+					0, InternalPixelFormat.Rgba8,
+					width, height,
+					0, PixelFormatEnum.Bgra,
+					IGE.Graphics.OpenGL.PixelType.UnsignedByte, IntPtr.Zero
+				);
+			}
+			else {
+				using(BinaryWriter w = new BinaryWriter(new FileStream("test.dat", FileMode.Create))) {
+					w.Write(pixels, 0, pixels.Length);
+				}
+				lock(pixels.SyncRoot) {
+					unsafe {
+						fixed(byte *pix = &pixels[0]) {
+							GL.TexImage2D(
+								TextureTarget.Texture2D,
+								0, InternalPixelFormat.Rgba8,
+								width, height,
+								0, PixelFormatEnum.Bgra,
+								IGE.Graphics.OpenGL.PixelType.UnsignedByte, pix
+							);
+						}
 					}
 				}
 			}
