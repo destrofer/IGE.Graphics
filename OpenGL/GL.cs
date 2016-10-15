@@ -58,5 +58,13 @@ namespace IGE.Graphics.OpenGL {
 		public static IOpenGLWindow CreateWindow(INativeWindow parent, int x, int y, int width, int height) {
 			return Driver.CreateWindow(parent, x, y, width, height);
 		}
+		
+		public static bool SetBufferSwapInterval(int interval) {
+			return Driver.SetBufferSwapInterval(interval);
+		}
+		
+		public static int GetBufferSwapInterval() {
+			return Driver.GetBufferSwapInterval();
+		}
 	}
 }

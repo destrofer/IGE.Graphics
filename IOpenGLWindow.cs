@@ -28,6 +28,8 @@ namespace IGE.Graphics {
 		event BeforeRenderFrameEventHandler BeforeRenderFrameEvent;
 		event RenderFrameEventHandler RenderFrameEvent;
 		event AfterRenderFrameEventHandler AfterRenderFrameEvent;
+		
+		void SwapBuffers();
 	}
 	
 	public delegate void BeforeRenderFrameEventHandler();

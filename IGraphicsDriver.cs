@@ -30,5 +30,7 @@ namespace IGE.Platform {
 		void ResetContext();
 		
 		IOpenGLWindow CreateWindow(INativeWindow parent, int x, int y, int width, int height);
+		bool SetBufferSwapInterval(int interval);
+		int GetBufferSwapInterval();
 	}
 }
