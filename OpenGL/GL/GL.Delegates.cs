@@ -93,6 +93,11 @@ namespace IGE.Graphics.OpenGL {
 			public unsafe static glLoadMatrixf LoadMatrixf;
 			
 			[RuntimeImport("opengl32")]
+			[System.Security.SuppressUnmanagedCodeSecurity()]
+			public unsafe delegate void glMultMatrixf(float* m);
+			public unsafe static glMultMatrixf MultMatrixf;
+			
+			[RuntimeImport("opengl32")]
 			public delegate void glBegin(BeginMode mode);
 			public static glBegin Begin;
 			

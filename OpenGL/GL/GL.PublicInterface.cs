@@ -82,6 +82,10 @@ namespace IGE.Graphics.OpenGL {
 		public static void LoadMatrix(ref Matrix4 m) {
 			unsafe { fixed (float* ptr = &m.M11) { Delegates.LoadMatrixf(ptr); } }
 		}
+        
+		public static void MultMatrix(ref Matrix4 m) {
+			unsafe { fixed (float* ptr = &m.M11) { Delegates.MultMatrixf(ptr); } }
+		}
 		
         public static void Ortho(float left, float right, float bottom, float top, float zNear, float zFar) {
             Delegates.Ortho(left, right, bottom, top, zNear, zFar);
