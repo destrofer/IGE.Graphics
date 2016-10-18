@@ -61,5 +61,18 @@ namespace IGE.Graphics {
 			base.Dispose(manual);
 		}
 		
+		public override void Bind() {
+			if( m_Texture != null )
+				m_Texture.Bind();
+			if( m_RenderBuffer != null )
+				m_RenderBuffer.Bind();
+			base.Bind();
+		}
+		
+		public new static void Unbind() {
+			FrameBuffer.Unbind();
+			RenderBuffer.Unbind();
+			Texture.Unbind();
+		}
 	}
 }

@@ -47,7 +47,7 @@ namespace IGE.Graphics {
 			GC.SuppressFinalize(this);
 		}
 		
-		public void Bind() {
+		public virtual void Bind() {
 			GL.BindFramebuffer(FramebufferTarget.Framebuffer, m_Id);
 		}
 		
