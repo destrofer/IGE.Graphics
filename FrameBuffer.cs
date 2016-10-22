@@ -51,20 +51,20 @@ namespace IGE.Graphics {
 			GL.BindFramebuffer(FramebufferTarget.Framebuffer, m_Id);
 		}
 		
-		public static void Unbind() {
+		public virtual void Unbind() {
 			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
 		}
 		
 		public void AttachTexture(Texture texture, FramebufferAttachment attachment) {
-			GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, attachment, TextureTarget.Texture2D, texture.Id, 0);
+			GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, attachment, texture.TextureType, texture.Id, 0);
 		}
 
 		public void AttachTexture(Texture texture) {
 			AttachTexture(texture, FramebufferAttachment.ColorAttachment0);
 		}
 		
-		public void DetachTexture(FramebufferAttachment attachment) {
-			GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, attachment, TextureTarget.Texture2D, 0, 0);
+		public void DetachTexture(Texture texture, FramebufferAttachment attachment) {
+			GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, attachment, texture.TextureType, 0, 0);
 		}
 		
 		public void AttachRenderBuffer(RenderBuffer renderBuffer, FramebufferAttachment attachment) {
@@ -75,11 +75,12 @@ namespace IGE.Graphics {
 			AttachRenderBuffer(renderBuffer, FramebufferAttachment.DepthAttachment);
 		}
 		
-		public void DetachRenderBuffer(FramebufferAttachment attachment) {
+		public void DetachRenderBuffer(RenderBuffer renderBuffer, FramebufferAttachment attachment) {
 			GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, attachment, RenderbufferTarget.Renderbuffer, 0);
 		}
 		
-		public static FramebufferStatus CheckStatus() {
+		public FramebufferStatus CheckStatus() {
+			Bind();
 			return GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
 		}
 	}

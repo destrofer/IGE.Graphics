@@ -299,6 +299,11 @@ namespace IGE.Graphics.OpenGL {
 			[System.Security.SuppressUnmanagedCodeSecurity()]
 			public unsafe delegate void glGetIntegerv(ParamName pname, [Out] int* paramsPtr);
 			public unsafe static glGetIntegerv GetIntegerv;
+
+			[RuntimeImport("opengl32")]
+			[System.Security.SuppressUnmanagedCodeSecurity()]
+			public unsafe delegate void glGetFloatv(ParamName pname, [Out] float* paramsPtr);
+			public unsafe static glGetFloatv GetFloatv;
 			
 
 
@@ -408,6 +413,20 @@ namespace IGE.Graphics.OpenGL {
 			[RuntimeImport("opengl32")]
 			public delegate void glDrawRangeElements(BeginMode mode, int start, int end, int count, PointerToType type, int offset);
 			public static glDrawRangeElements DrawRangeElements;
+			
+			
+			
+			[RuntimeImport("opengl32")]
+			public delegate void glTexImage2DMultisample(TextureTarget target, int samples, InternalPixelFormat internalFormat, int width, int height, byte fixedSampleLocations);
+			public static glTexImage2DMultisample TexImage2DMultisample;
+
+			[RuntimeImport("opengl32")]
+			public delegate void glRenderbufferStorageMultisample(RenderbufferTarget target, int samples, InternalPixelFormat format, uint width, uint height);
+			public static glRenderbufferStorageMultisample RenderbufferStorageMultisample;
+
+			[RuntimeImport("opengl32")]
+			public delegate void glBlitFramebuffer(int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, BlitFramebufferBits bufferMask, TextureMagFilter filter);
+			public static glBlitFramebuffer BlitFramebuffer;
 		}
 	}
 }

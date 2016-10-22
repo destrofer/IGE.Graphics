@@ -54,7 +54,7 @@ namespace IGE.Graphics {
 		
 		public void Bind(float opacity) {
 			if( Textures == null || Textures.Length == 0 )
-				Texture.Unbind();
+				Texture.UnbindAny();
 			else {
 				for( int i = Textures.Length - 1; i >= 0; i-- )
 					if( Textures[i] != null )
@@ -74,7 +74,7 @@ namespace IGE.Graphics {
 		
 		public static void Unbind() {
 			Shader.Unbind();
-			Texture.Unbind();
+			Texture.UnbindAny();
 		}
 		
 		public static Material Load(string fileName) {

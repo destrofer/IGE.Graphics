@@ -66,6 +66,30 @@ namespace IGE.Graphics {
 		protected float m_PixelSizeT;
 		public float PixelSizeT { get { return m_PixelSizeT; } }
 		
+		protected TextureTarget m_TextureType = TextureTarget.Texture2D;
+		public TextureTarget TextureType {
+			get { return m_TextureType; }
+			set { m_TextureType = value; }
+		}
+		
+		protected int m_MultisamplingSamples = 8;
+		public int MultisamplingSamples {
+			get { return m_MultisamplingSamples; }
+			set { m_MultisamplingSamples = value; }
+		}
+		
+		protected TextureMinFilter m_MinFilter = DefaultMinFilter;
+		public TextureMinFilter MinFilter {
+			get { return m_MinFilter; }
+			set { SetFilter(value); }
+		}
+
+		protected TextureMagFilter m_MagFilter = DefaultMagFilter;
+		public TextureMagFilter MagFilter {
+			get { return m_MagFilter; }
+			set { SetFilter(value); }
+		}
+				
 		public bool Loaded { get { return m_Id != 0; } }
 		
 		#region Constructors /destructors and loaders
@@ -126,8 +150,8 @@ namespace IGE.Graphics {
 			}
 			
 			Bind();
-			GL.TexParameter(TextureTarget.Texture2D, TextureParamName.TextureMinFilter, (int)DefaultMinFilter);
-			GL.TexParameter(TextureTarget.Texture2D, TextureParamName.TextureMagFilter, (int)DefaultMagFilter);
+			GL.TexParameter(m_TextureType, TextureParamName.TextureMinFilter, (int)m_MinFilter);
+			GL.TexParameter(m_TextureType, TextureParamName.TextureMagFilter, (int)m_MagFilter);
 			m_LastError = TextureLoadError.NoError;
 			return true;
 		}
@@ -154,23 +178,30 @@ namespace IGE.Graphics {
 			Bind();
 			
 			if( pixels == null ) {
-				GL.TexImage2D(
-					TextureTarget.Texture2D,
-					0, InternalPixelFormat.Rgba8,
-					width, height,
-					0, PixelFormatEnum.Bgra,
-					IGE.Graphics.OpenGL.PixelType.UnsignedByte, IntPtr.Zero
-				);
+				if( m_TextureType == TextureTarget.Texture2DMultisample ) {
+					GL.TexImage2DMultisample(
+						m_TextureType,
+						m_MultisamplingSamples, InternalPixelFormat.Rgba8,
+						width, height,
+						true
+					);
+				}
+				else {
+					GL.TexImage2D(
+						m_TextureType,
+						0, InternalPixelFormat.Rgba8,
+						width, height,
+						0, PixelFormatEnum.Bgra,
+						IGE.Graphics.OpenGL.PixelType.UnsignedByte, IntPtr.Zero
+					);
+				}
 			}
 			else {
-				using(BinaryWriter w = new BinaryWriter(new FileStream("test.dat", FileMode.Create))) {
-					w.Write(pixels, 0, pixels.Length);
-				}
 				lock(pixels.SyncRoot) {
 					unsafe {
 						fixed(byte *pix = &pixels[0]) {
 							GL.TexImage2D(
-								TextureTarget.Texture2D,
+								m_TextureType,
 								0, InternalPixelFormat.Rgba8,
 								width, height,
 								0, PixelFormatEnum.Bgra,
@@ -180,14 +211,16 @@ namespace IGE.Graphics {
 					}
 				}
 			}
+			
+			if( m_MinFilter != TextureMinFilter.Linear && m_MinFilter != TextureMinFilter.Nearest )
+				GL.GenerateMipmap(m_TextureType);
+
 			return true;
 		}
 		
 		public bool Load(int width, int height, byte[] pixels, TextureMinFilter min_filter, TextureMagFilter mag_filter) {
-			bool res = Load(width, height, pixels);
-			if( res )
-				SetFilter(min_filter, mag_filter);
-			return res;
+			SetFilter(min_filter, mag_filter);
+			return Load(width, height, pixels);
 		}
 		
 		public bool Load(Bitmap bmp) {
@@ -195,10 +228,8 @@ namespace IGE.Graphics {
 		}
 		
 		public bool Load(Bitmap bmp, TextureMinFilter min_filter, TextureMagFilter mag_filter) {
-			bool res = Load(bmp);
-			if( res )
-				SetFilter(min_filter, mag_filter);
-			return res;
+			SetFilter(min_filter, mag_filter);
+			return Load(bmp);
 		}
 		
 		public override bool Load(string filename) {
@@ -223,10 +254,8 @@ namespace IGE.Graphics {
 		}
 		
 		public bool Load(string filename, TextureMinFilter min_filter, TextureMagFilter mag_filter) {
-			bool res = Load(filename);
-			if( res )
-				SetFilter(min_filter, mag_filter);
-			return res;
+			SetFilter(min_filter, mag_filter);
+			return Load(filename);
 		}
 		
 		public override void OnDispose(bool manual_dispose)
@@ -243,13 +272,8 @@ namespace IGE.Graphics {
 
 		#endregion
 		
-		private static int BoundTextureId = -1;
-		
 		public void Bind() {
-			if( BoundTextureId != m_Id ) {
-				GL.BindTexture(TextureTarget.Texture2D, m_Id);
-				BoundTextureId = m_Id;
-			}
+			GL.BindTexture(m_TextureType, m_Id);
 		}
 		
 		public void Bind(int textureUnit) {
@@ -257,11 +281,14 @@ namespace IGE.Graphics {
 				Bind();
 		}
 		
-		public static void Unbind() {
-			GL.BindTexture(TextureTarget.Texture2D, 0);
-			BoundTextureId = 0;
+		public void Unbind() {
+			GL.BindTexture(m_TextureType, 0);
 		}
-		
+
+		public static void UnbindAny() {
+			GL.BindTexture(TextureTarget.Texture2D, 0);
+		}
+
 		public static void Enable() {
 			GL.Enable(EnableCap.Texture2D);
 		}
@@ -282,26 +309,39 @@ namespace IGE.Graphics {
 			return true;
 		}
 
-		public static void SetFilter(TextureMinFilter min, TextureMagFilter mag) {
-			GL.TexParameter(TextureTarget.Texture2D, TextureParamName.TextureMinFilter, (int)min);
-			GL.TexParameter(TextureTarget.Texture2D, TextureParamName.TextureMagFilter, (int)mag);
+		public void SetFilter(TextureMinFilter min, TextureMagFilter mag) {
+			m_MinFilter = min;
+			m_MagFilter = mag;
+			if( m_Id != 0 ) {
+				Bind();
+				GL.TexParameter(m_TextureType, TextureParamName.TextureMinFilter, (int)min);
+				GL.TexParameter(m_TextureType, TextureParamName.TextureMagFilter, (int)mag);
+			}
 		}
 		
-		public static void SetFilter(TextureMinFilter min) {
-			GL.TexParameter(TextureTarget.Texture2D, TextureParamName.TextureMinFilter, (int)min);
+		public void SetFilter(TextureMinFilter min) {
+			m_MinFilter = min;
+			if( m_Id != 0 ) {
+				Bind();
+				GL.TexParameter(m_TextureType, TextureParamName.TextureMinFilter, (int)min);
+			}
 		}
 		
-		public static void SetFilter(TextureMagFilter mag) {
-			GL.TexParameter(TextureTarget.Texture2D, TextureParamName.TextureMagFilter, (int)mag);
+		public void SetFilter(TextureMagFilter mag) {
+			m_MagFilter = mag;
+			if( m_Id != 0 ) {
+				Bind();
+				GL.TexParameter(m_TextureType, TextureParamName.TextureMagFilter, (int)mag);
+			}
 		}
 		
 
-		public static void SetWrapModeS(TextureWrapMode mode) {
-			GL.TexParameter(TextureTarget.Texture2D, TextureParamName.TextureWrapS, (int)mode);
+		public void SetWrapModeS(TextureWrapMode mode) {
+			GL.TexParameter(m_TextureType, TextureParamName.TextureWrapS, (int)mode);
 		}
 		
-		public static void SetWrapModeT(TextureWrapMode mode) {
-			GL.TexParameter(TextureTarget.Texture2D, TextureParamName.TextureWrapT, (int)mode);
+		public void SetWrapModeT(TextureWrapMode mode) {
+			GL.TexParameter(m_TextureType, TextureParamName.TextureWrapT, (int)mode);
 		}
 		
 		public static void SetMTCoord(int unit_index, float s, float t) {
@@ -313,6 +353,17 @@ namespace IGE.Graphics {
 			while( size > curSize )
 				curSize *= 2;
 			return curSize;
+		}
+		
+		public static float GetMaxAnisotropyMaximum() {
+			float max = 0f;
+			GL.GetFloat(ParamName.MaxTextureMaxAnisotropy, out max);
+			return max;
+		}
+		
+		public void SetMaxAnisotropy(float maxAnisotropy) {
+			Bind();
+			GL.TexParameter(m_TextureType, TextureParamName.TextureMaxAnisotropy, maxAnisotropy);
 		}
 	}
 	

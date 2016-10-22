@@ -28,22 +28,28 @@ namespace IGE.Graphics {
 		protected int m_Id = 0;
 		protected int m_Width = 0;
 		protected int m_Height = 0;
+		protected int m_MultisamplingSamples = 0;
 		
 		public int Id { get { return m_Id; } }
 		public int Width { get { return m_Width; } }
 		public int Height { get { return m_Height; } }
+		public int MultisamplingSamples { get { return m_MultisamplingSamples; } }
 
-		public RenderBuffer(int width, int height)
-			: this(width, height, InternalPixelFormat.DepthComponent24)
+		public RenderBuffer(int width, int height, int multisamplingSamples)
+			: this(width, height, multisamplingSamples, InternalPixelFormat.DepthComponent24)
 		{
 		}
 
-		public RenderBuffer(int width, int height, InternalPixelFormat internalPixelFormat) {
+		public RenderBuffer(int width, int height, int multisamplingSamples, InternalPixelFormat internalPixelFormat) {
 			m_Width = width;
 			m_Height = height;
+			m_MultisamplingSamples = multisamplingSamples;
 			m_Id = GL.GenRenderbuffer();
 			Bind();
-			GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, internalPixelFormat, (uint)width, (uint)height);
+			if( m_MultisamplingSamples > 0 )
+				GL.RenderbufferStorageMultisample(RenderbufferTarget.Renderbuffer, m_MultisamplingSamples, internalPixelFormat, (uint)width, (uint)height);
+			else
+				GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, internalPixelFormat, (uint)width, (uint)height);
 			Unbind();
 		}
 		
@@ -67,7 +73,7 @@ namespace IGE.Graphics {
 			GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, m_Id);
 		}
 		
-		public static void Unbind() {
+		public void Unbind() {
 			GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, 0);
 		}
 	}

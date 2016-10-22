@@ -130,7 +130,7 @@ namespace IGE.Graphics {
 				// if frame does not exist render a red X instead :)
 				GL.PushAttrib(AttribBits.CurrentBit | AttribBits.TextureBit);
 				
-				Texture.Unbind();
+				Texture.UnbindAny();
 				GL.Color4(1.0f, 0.0f, 0.0f, 1.0f);
 				GL.Begin(BeginMode.Lines);
 					GL.Vertex2(x - 8.0f, y - 8.0f);

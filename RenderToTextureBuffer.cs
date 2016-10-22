@@ -24,19 +24,29 @@ using IGE.Graphics.OpenGL;
 
 namespace IGE.Graphics {
 	public class RenderToTextureBuffer : FrameBuffer {
-		protected Texture m_Texture;
-		protected RenderBuffer m_RenderBuffer;
+		protected Texture m_Texture = null;
+		protected RenderBuffer m_RenderBuffer = null;
 
 		public Texture Texture { get { return m_Texture; } }
 		public RenderBuffer RenderBuffer { get { return m_RenderBuffer; } }
 		
-		public RenderToTextureBuffer(int width, int height) : base() {
-			Bind();
-			m_Texture = new Texture(width, height, TextureMinFilter.Nearest, TextureMagFilter.Nearest);
+		public RenderToTextureBuffer(int width, int height, bool addDepthBuffer, int multisamplingSamples) : base() {
+			base.Bind();
+			m_Texture = new Texture();
+			if( multisamplingSamples > 0 ) {
+				m_Texture.TextureType = TextureTarget.Texture2DMultisample;
+				m_Texture.MultisamplingSamples = multisamplingSamples;
+			}
+			m_Texture.Create(width, height, TextureMinFilter.Nearest, TextureMagFilter.Nearest);
 			AttachTexture(m_Texture, FramebufferAttachment.ColorAttachment0);
-			m_RenderBuffer = new RenderBuffer(width, height);
-			AttachRenderBuffer(m_RenderBuffer, FramebufferAttachment.DepthAttachment);
-			RenderToTextureBuffer.Unbind();
+			if( addDepthBuffer ) {
+				m_RenderBuffer = new RenderBuffer(width, height, multisamplingSamples);
+				AttachRenderBuffer(m_RenderBuffer, FramebufferAttachment.DepthAttachment);
+				m_RenderBuffer.Unbind();
+			}
+			m_Texture.Unbind();
+			
+			base.Unbind();
 		}
 		
 		~RenderToTextureBuffer() {
@@ -45,18 +55,20 @@ namespace IGE.Graphics {
 		
 		protected override void Dispose(bool manual) {
 			if( m_RenderBuffer != null ) {
-				Bind();
-				RenderBuffer.Unbind();
-				DetachRenderBuffer(FramebufferAttachment.DepthAttachment);
+				base.Bind();
+				m_RenderBuffer.Unbind();
+				DetachRenderBuffer(m_RenderBuffer, FramebufferAttachment.DepthAttachment);
 				m_RenderBuffer.Dispose();
 				m_RenderBuffer = null;
+				base.Unbind();
 			}
 			if( m_Texture != null ) {
-				Bind();
-				Texture.Unbind();
-				DetachTexture(FramebufferAttachment.ColorAttachment0);
+				base.Bind();
+				m_Texture.Unbind();
+				DetachTexture(m_Texture, FramebufferAttachment.ColorAttachment0);
 				m_Texture.Dispose();
 				m_Texture = null;
+				base.Unbind();
 			}
 			base.Dispose(manual);
 		}
@@ -69,10 +81,34 @@ namespace IGE.Graphics {
 			base.Bind();
 		}
 		
-		public new static void Unbind() {
-			FrameBuffer.Unbind();
-			RenderBuffer.Unbind();
-			Texture.Unbind();
+		public override void Unbind() {
+			base.Unbind();
+			if( m_RenderBuffer != null )
+				m_RenderBuffer.Unbind();
+			if( m_Texture != null )
+				m_Texture.Unbind();
+		}
+
+		public virtual void CopyTo(RenderToTextureBuffer to) {
+			BlitFramebufferBits mask = BlitFramebufferBits.ColorBufferBit;
+			if( to.m_RenderBuffer != null )
+				mask |= BlitFramebufferBits.DepthBufferBit;
+			CopyTo(to, mask);
+		}
+		
+		public virtual void CopyTo(RenderToTextureBuffer to, BlitFramebufferBits mask) {
+			GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, m_Id);
+			GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, to.m_Id);
+			
+			GL.BlitFramebuffer(
+				0, 0, m_Texture.Width, m_Texture.Height,
+				0, 0, to.m_Texture.Width, to.m_Texture.Height,
+				mask,
+				TextureMagFilter.Linear
+			);
+			
+			GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, 0);
+			GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
 		}
 	}
 }

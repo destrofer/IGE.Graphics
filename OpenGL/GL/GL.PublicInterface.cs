@@ -209,6 +209,10 @@ namespace IGE.Graphics.OpenGL {
 		public static void GetInteger(ParamName param, out int val) {
 			unsafe { fixed(int *ptr = &val) { Delegates.GetIntegerv(param, ptr); } }
 		}
+
+		public static void GetFloat(ParamName param, out float val) {
+			unsafe { fixed(float *ptr = &val) { Delegates.GetFloatv(param, ptr); } }
+		}
         
         public static void BindTexture(TextureTarget target, int texId) {
             Delegates.BindTexture(target, texId);
@@ -469,6 +473,18 @@ namespace IGE.Graphics.OpenGL {
 		
 		public static void DrawRangeElements(BeginMode mode, int start, int end, int count, PointerToType type, int offset) {
 			Delegates.DrawRangeElements(mode, start, end, count, type, offset);
+		}
+		
+		public static void TexImage2DMultisample(TextureTarget target, int samples, InternalPixelFormat internalFormat, int width, int height, bool fixedSampleLocations) {
+			Delegates.TexImage2DMultisample(target, samples, internalFormat, width, height, (byte)(fixedSampleLocations ? 1 : 0));
+		}
+		
+		public static void RenderbufferStorageMultisample(RenderbufferTarget target, int samples, InternalPixelFormat format, uint width, uint height) {
+			Delegates.RenderbufferStorageMultisample(target, samples, format, width, height);
+		}
+		
+		public static void BlitFramebuffer(int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, BlitFramebufferBits bufferMask, TextureMagFilter filter) {
+			Delegates.BlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, bufferMask, filter);
 		}
 	}
 }

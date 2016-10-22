@@ -106,7 +106,7 @@ namespace IGE.Graphics {
 			}
 			
 			tex.Bind();
-			Texture.SetFilter(TextureMinFilter.Nearest, TextureMagFilter.Nearest);
+			tex.SetFilter(TextureMinFilter.Nearest, TextureMagFilter.Nearest);
 
 			if( !node["width"].Equals("") ) {
 				flags |= ComplexImageFlags.UsingWidth;

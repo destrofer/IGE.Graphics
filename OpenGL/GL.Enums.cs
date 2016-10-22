@@ -124,6 +124,7 @@ namespace IGE.Graphics.OpenGL {
         Light5 = 0x4005,
         Light6 = 0x4006,
         Light7 = 0x4007,
+        Multisample = 0x809D,
     }
     
     public enum HintTarget : int {
@@ -231,6 +232,7 @@ namespace IGE.Graphics.OpenGL {
         TextureSwizzleB = 0x8E44,
         TextureSwizzleA = 0x8E45,
         TextureSwizzleRgba = 0x8E46,
+        TextureMaxAnisotropy = 0x84FE,
     }
 
     public enum BlendFuncDst : int {
@@ -719,6 +721,7 @@ namespace IGE.Graphics.OpenGL {
         TextureBindingRectangle = 0x84F6,
         MaxRectangleTextureSize = 0x84F8,
         MaxTextureLodBias = 0x84FD,
+        MaxTextureMaxAnisotropy = 0x84FF,
         TextureCubeMap = 0x8513,
         TextureBindingCubeMap = 0x8514,
         MaxCubeMapTextureSize = 0x851C,
@@ -1167,6 +1170,8 @@ namespace IGE.Graphics.OpenGL {
     }
     
     public enum FramebufferTarget : int {
+    	ReadFramebuffer = 0x8CA8,
+    	DrawFramebuffer = 0x8CA9,
     	Framebuffer = 0x8D40,
     }
     
@@ -1205,6 +1210,7 @@ namespace IGE.Graphics.OpenGL {
     	FramebufferIncompleteReadBuffer = 0x8CDC,
     	FramebufferUnsupported = 0x8CDD,
     	FramebufferStatusError = 0x8CDE,
+    	FramebufferIncompleteMultisample = 0x8D56,
     }
     
     public enum FramebufferAttachment : int {
@@ -1226,5 +1232,12 @@ namespace IGE.Graphics.OpenGL {
     	ColorAttachment15,
     	DepthAttachment = 0x8D00,
     	StencilAttachment = 0x8D20,
+    }
+
+    [Flags]
+    public enum BlitFramebufferBits : int {
+        DepthBufferBit = 0x00000100,
+        StencilBufferBit = 0x00000400,
+        ColorBufferBit = 0x00004000,
     }
 }
